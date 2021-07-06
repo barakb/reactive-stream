@@ -19,6 +19,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+	implementation("org.reactivestreams:reactive-streams:1.0.3")
+	implementation("org.reactivestreams:reactive-streams-tck:1.0.3")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
