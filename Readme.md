@@ -3,3 +3,6 @@
 
 ### Reactive stream example
 
+[reactive stream spec](https://github.com/reactive-streams/reactive-streams-jvm/blob/v1.0.3/README.md)
+
+Following the example from this [talk](https://www.youtube.com/watch?v=noeWdjO4fyU&ab_channel=Devoxx)

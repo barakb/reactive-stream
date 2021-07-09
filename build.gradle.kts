@@ -20,7 +20,8 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.reactivestreams:reactive-streams:1.0.3")
-	implementation("org.reactivestreams:reactive-streams-tck:1.0.3")
+	testImplementation("org.reactivestreams:reactive-streams-tck:1.0.3")
+	testImplementation("org.testng:testng:7.4.0")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
@@ -32,5 +33,5 @@ tasks.withType<KotlinCompile> {
 }
 
 tasks.withType<Test> {
-	useJUnitPlatform()
+	useTestNG()
 }
