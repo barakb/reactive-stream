@@ -3,60 +3,81 @@ package com.totango.reactivestream
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 class ArrayPublisher<T>(private val source: Array<T>) : Publisher<T> {
 
     override fun subscribe(subscriber: Subscriber<in T>) {
         subscriber.onSubscribe(object : Subscription {
-            var cancelled = false
-            var index = 0
-            var requested: Long = 0
+            var cancelled = AtomicBoolean(false)
+            var index = AtomicInteger(0)
+            var requested = AtomicLong(0L)
+
             override fun request(n: Long) {
 
-                if (n <= 0 && !cancelled) {
+                if (n <= 0 && !cancelled.get()) {
                     cancel()
                     subscriber.onError(IllegalArgumentException("request number have to be > 0, given: $n"))
                     return
                 }
 
-                val initialRequested = requested
-                requested += n
+                val initialRequested = requested.safeGetAndAdd(n)
+
 
                 if (initialRequested != 0L) {
                     return
                 }
-                var sent = 0L
-                while (sent < requested && index < source.size) {
-                    if (cancelled) {
+
+                do {
+                    var sent = 0L
+                    while (sent < requested.get() && index.get() < source.size) {
+                        if (cancelled.get()) {
+                            return
+                        }
+
+                        val next = source[index.get()]
+                        if (next == null) {
+                            subscriber.onError(NullPointerException())
+                            return
+                        }
+                        subscriber.onNext(next)
+                        sent += 1
+                        index.getAndIncrement()
+                    }
+
+                    if (cancelled.get()) {
                         return
                     }
 
-                    val next = source[index]
-                    if (next == null) {
-                        subscriber.onError(NullPointerException())
+                    if (index.get() == source.size) {
+                        subscriber.onComplete()
                         return
                     }
-                    subscriber.onNext(next)
-                    sent += 1
-                    index += 1
-                }
 
-                if (cancelled) {
-                    return
-                }
-
-                if (index == source.size) {
-                    subscriber.onComplete()
-                    return
-                }
-
-                requested -= sent
+                } while (requested.addAndGet(-sent) != 0L)
             }
 
             override fun cancel() {
-                cancelled = true
+                cancelled.set(true)
             }
         })
 
     }
+}
+
+fun AtomicLong.safeGetAndAdd(n: Long): Long {
+    var current: Long
+    do {
+        current = get()
+        if (current == Long.MAX_VALUE) {
+            return Long.MAX_VALUE
+        }
+        var sum = current + n
+        if (sum < 0) {
+            sum = Long.MAX_VALUE
+        }
+    } while (!compareAndSet(current, sum))
+    return current
 }
