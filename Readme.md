@@ -7,5 +7,5 @@
 
 Following the example from this [talk](https://www.youtube.com/watch?v=noeWdjO4fyU&ab_channel=Devoxx) and [sources](https://github.com/CollaborationInEncapsulation/reactive-hardcore)
 
-* building `./gradlew build`
-* run jmh `./gradlew jmh`
+*  building `./gradlew build`
+*  run jmh `./gradlew jmh`
