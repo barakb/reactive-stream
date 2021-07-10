@@ -3,20 +3,21 @@ package com.totango.reactivestream
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
-class ArrayPublisher<T>(private val source: Array<T>) : Publisher<T> {
+class UnoptimizedArrayPublisher<T>(private val source: Array<T>) : Publisher<T> {
 
     override fun subscribe(subscriber: Subscriber<in T>) {
         subscriber.onSubscribe(object : Subscription {
-            @Volatile
-            var cancelled = false
-            var index = 0
+            var cancelled = AtomicBoolean(false)
+            var index = AtomicInteger(0)
             var requested = AtomicLong(0L)
 
             override fun request(n: Long) {
 
-                if (n <= 0 && !cancelled) {
+                if (n <= 0 && !cancelled.get()) {
                     cancel()
                     subscriber.onError(IllegalArgumentException("request number have to be > 0, given: $n"))
                     return
@@ -24,50 +25,44 @@ class ArrayPublisher<T>(private val source: Array<T>) : Publisher<T> {
 
                 val initialRequested = requested.safeGetAndAdd(n)
 
+
                 if (initialRequested != 0L) {
                     return
                 }
-                var toSend = n
 
-                while(true){
+                do {
                     var sent = 0L
-                    while (sent < toSend && index < source.size) {
-                        if (cancelled) {
+                    while (sent < requested.get() && index.get() < source.size) {
+                        if (cancelled.get()) {
                             return
                         }
 
-                        val next = source[index]
+                        val next = source[index.get()]
                         if (next == null) {
                             subscriber.onError(NullPointerException())
                             return
                         }
                         subscriber.onNext(next)
                         sent += 1
-                        index += 1
+                        index.getAndIncrement()
                     }
 
-                    if (cancelled) {
+                    if (cancelled.get()) {
                         return
                     }
 
-                    if (index == source.size) {
+                    if (index.get() == source.size) {
                         subscriber.onComplete()
                         return
                     }
 
-                    toSend = requested.addAndGet(-sent)
-                    if(toSend == 0L){
-                        return
-                    }
-                }
+                } while (requested.addAndGet(-sent) != 0L)
             }
 
             override fun cancel() {
-                cancelled = true
+                cancelled.set(true)
             }
         })
-
-
 
     }
 }
