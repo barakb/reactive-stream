@@ -3,67 +3,75 @@ package com.totango.reactivestream
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+
 
 class ArrayPublisher<T>(private val source: Array<T>) : Publisher<T> {
 
     override fun subscribe(subscriber: Subscriber<in T>) {
-        subscriber.onSubscribe(object : Subscription {
-            var cancelled = AtomicBoolean(false)
-            var index = AtomicInteger(0)
-            var requested = AtomicLong(0L)
+        subscriber.onSubscribe(ArrayPublisherSubscription(source, subscriber))
+    }
 
-            override fun request(n: Long) {
+    class ArrayPublisherSubscription<T>(
+        private val source: Array<T>,
+        private val subscriber: Subscriber<in T>
+    ) : Subscription {
+        @Volatile
+        var cancelled = false
+        private var index = 0
+        private var requested = AtomicLong(0L)
 
-                if (n <= 0 && !cancelled.get()) {
-                    cancel()
-                    subscriber.onError(IllegalArgumentException("request number have to be > 0, given: $n"))
-                    return
-                }
+        override fun request(n: Long) {
 
-                val initialRequested = requested.safeGetAndAdd(n)
+            if (n <= 0 && !cancelled) {
+                cancel()
+                subscriber.onError(IllegalArgumentException("request number have to be > 0, given: $n"))
+                return
+            }
 
+            val initialRequested = requested.safeGetAndAdd(n)
 
-                if (initialRequested != 0L) {
-                    return
-                }
+            if (initialRequested != 0L) {
+                return
+            }
+            var toSend = n
 
-                do {
-                    var sent = 0L
-                    while (sent < requested.get() && index.get() < source.size) {
-                        if (cancelled.get()) {
-                            return
-                        }
-
-                        val next = source[index.get()]
-                        if (next == null) {
-                            subscriber.onError(NullPointerException())
-                            return
-                        }
-                        subscriber.onNext(next)
-                        sent += 1
-                        index.getAndIncrement()
-                    }
-
-                    if (cancelled.get()) {
+            while (true) {
+                var sent = 0L
+                while (sent < toSend && index < source.size) {
+                    if (cancelled) {
                         return
                     }
 
-                    if (index.get() == source.size) {
-                        subscriber.onComplete()
+                    val next = source[index]
+                    if (next == null) {
+                        subscriber.onError(NullPointerException())
                         return
                     }
+                    subscriber.onNext(next)
+                    sent += 1
+                    index += 1
+                }
 
-                } while (requested.addAndGet(-sent) != 0L)
+                if (cancelled) {
+                    return
+                }
+
+                if (index == source.size) {
+                    subscriber.onComplete()
+                    return
+                }
+
+                toSend = requested.addAndGet(-sent)
+                if (toSend == 0L) {
+                    return
+                }
             }
+        }
 
-            override fun cancel() {
-                cancelled.set(true)
-            }
-        })
-
+        override fun cancel() {
+            cancelled = true
+        }
     }
 }
 
