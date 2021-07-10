@@ -8,6 +8,7 @@ import org.reactivestreams.tck.PublisherVerification
 import org.reactivestreams.tck.TestEnvironment
 import org.testng.annotations.Test
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -200,6 +201,38 @@ internal class ArrayPublisherTest : PublisherVerification<Long>(TestEnvironment(
         assertThat(sent.get())
             .isFalse
 
+    }
+
+    @Test
+    fun multithreadingTest() {
+        val countDownLatch = CountDownLatch(1)
+        val collected: MutableList<Long> = mutableListOf()
+        val toRequest = 5000L
+        val array = generate(toRequest)
+        val publisher = ArrayPublisher(array)
+
+        publisher.subscribe(object : Subscriber<Long> {
+            override fun onSubscribe(s: Subscription) {
+                repeat(toRequest.toInt()) {
+                    ForkJoinPool.commonPool().execute { s.request(1) }
+                }
+            }
+
+            override fun onNext(next: Long) {
+                collected.add(next)
+            }
+
+            override fun onError(t: Throwable) {
+            }
+
+            override fun onComplete() {
+                countDownLatch.countDown()
+            }
+        })
+
+        assertThat(countDownLatch.await(2, TimeUnit.SECONDS))
+            .isTrue
+        assertThat(collected).hasSize(5000).containsExactly(*array)
     }
 
 
