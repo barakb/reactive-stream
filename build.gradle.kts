@@ -20,7 +20,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.reactivestreams:reactive-streams:1.0.3")
+    implementation("org.reactivestreams:reactive-streams:1.0.4")
     implementation("org.openjdk.jmh:jmh-core:1.32")
     implementation("org.openjdk.jmh:jmh-generator-annprocess:1.32")
     testImplementation("org.reactivestreams:reactive-streams-tck:1.0.3")
