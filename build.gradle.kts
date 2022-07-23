@@ -5,7 +5,7 @@ plugins {
     id("io.spring.dependency-management") version "1.0.11.RELEASE"
     id("me.champeau.jmh") version "0.6.5"
     kotlin("jvm") version "1.5.20"
-    kotlin("plugin.spring") version "1.5.20"
+    kotlin("plugin.spring") version "1.7.10"
 }
 
 group = "com.totango"
