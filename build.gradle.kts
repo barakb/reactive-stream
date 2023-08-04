@@ -21,7 +21,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.reactivestreams:reactive-streams:1.0.3")
-    implementation("org.openjdk.jmh:jmh-core:1.32")
+    implementation("org.openjdk.jmh:jmh-core:1.37")
     implementation("org.openjdk.jmh:jmh-generator-annprocess:1.32")
     testImplementation("org.reactivestreams:reactive-streams-tck:1.0.3")
     testImplementation("org.testng:testng:7.4.0")
