@@ -24,7 +24,7 @@ dependencies {
     implementation("org.openjdk.jmh:jmh-core:1.32")
     implementation("org.openjdk.jmh:jmh-generator-annprocess:1.32")
     testImplementation("org.reactivestreams:reactive-streams-tck:1.0.3")
-    testImplementation("org.testng:testng:7.4.0")
+    testImplementation("org.testng:testng:7.9.0")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
